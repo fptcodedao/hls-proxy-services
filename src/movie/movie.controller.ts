@@ -28,7 +28,7 @@ export class MovieController {
     const key = md5(param.url);
     const result = await this.cacheManager.get(key);
     if (!result) {
-      const urlConvert = decrypt(param.url, this.key);
+      const urlConvert = decrypt(atob(param.url), this.key);
       const urlParse = urlConvert.split('|');
       const m3u8 = urlParse[0];
       const referer = urlParse[1];
@@ -48,7 +48,7 @@ export class MovieController {
 
   @Get('ts/:url')
   async getMovieSegment(@Param() param, @Request() req, @Response() res: Res) {
-    const urlConvert = decrypt(param.url, this.key);
+    const urlConvert = decrypt(atob(param.url), this.key);
     const urlParse = urlConvert.split('|');
     const segment = urlParse[0];
     const referer = urlParse[1];
@@ -91,14 +91,15 @@ export class MovieController {
             const regex = /https?:\/\/[^\""\s]+/g;
             let urlParse = line.replace(regex, regex.exec(line)?.[0] ?? '');
             urlParse =
-              '/movie/key/' + encrypt(`${urlParse}|${referer}`, this.key);
+              '/movie/key/' + btoa(encrypt(`${urlParse}|${referer}`, this.key));
             newLines.push(urlParse);
           } else {
             newLines.push(line);
           }
         } else {
           const uri = new URL(line, url);
-          const link = '/movie/' + encrypt(`${uri.href}|${referer}`, this.key);
+          const link =
+            '/movie/' + btoa(encrypt(`${uri.href}|${referer}`, this.key));
           newLines.push(link);
         }
       }
@@ -112,7 +113,7 @@ export class MovieController {
             const regex = /https?:\/\/[^\""\s]+/g;
             let urlParse = line.replace(regex, regex.exec(line)?.[0] ?? '');
             urlParse =
-              '/movie/key/' + encrypt(`${urlParse}|${referer}`, this.key);
+              '/movie/key/' + btoa(encrypt(`${urlParse}|${referer}`, this.key));
             newLines.push(line.replace(regex, url));
           } else {
             newLines.push(line);
@@ -120,7 +121,7 @@ export class MovieController {
         } else {
           const uri = new URL(line, url);
           const link =
-            '/movie/ts/' + encrypt(`${uri.href}|${referer}`, this.key);
+            '/movie/ts/' + btoa(encrypt(`${uri.href}|${referer}`, this.key));
           newLines.push(link);
         }
       }
