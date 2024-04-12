@@ -1,6 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import {
+  BadRequestException,
   Controller,
   Get,
   Header,
@@ -27,23 +28,28 @@ export class MovieController {
   async getMovieM3u8(@Param() param) {
     const key = md5(param.url);
     const result = await this.cacheManager.get(key);
-    if (!result) {
-      const urlConvert = decrypt(atob(param.url), this.key);
-      const urlParse = urlConvert.split('|');
-      const m3u8 = urlParse[0];
-      const referer = urlParse[1];
-      const response = await this.httpService
-        .get(m3u8, {
-          headers: {
-            Referer: referer,
-          },
-        })
-        .toPromise();
-      const data = this.mapFileM3u8(response.data, m3u8, referer);
-      await this.cacheManager.set(key, data, 86400);
-      return data;
+    try {
+      if (!result) {
+        const urlConvert = decrypt(atob(param.url), this.key);
+        const urlParse = urlConvert.split('|');
+        const m3u8 = urlParse[0];
+        const referer = urlParse[1];
+        const response = await this.httpService
+          .get(m3u8, {
+            headers: {
+              Referer: referer,
+            },
+          })
+          .toPromise();
+        const data = this.mapFileM3u8(response.data, m3u8, referer);
+        await this.cacheManager.set(key, data, 86400);
+        return data;
+      }
+      return result;
+    } catch (e) {
+      console.log(e);
     }
-    return result;
+    throw new BadRequestException('not found');
   }
 
   @Get('ts/:url')
@@ -78,6 +84,10 @@ export class MovieController {
     req.pipe(proxy, {
       end: true,
     });
+    proxy.on('error', function (err) {
+      throw new BadRequestException('not found');
+    });
+    proxy.end();
   }
 
   mapFileM3u8(data, url, referer) {
