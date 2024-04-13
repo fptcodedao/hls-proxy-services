@@ -10,7 +10,7 @@ export function encrypt(text, password) {
   }
 
   const iv = crypto.randomBytes(IV_LENGTH);
-  const cipher = crypto.createCipheriv(AES_METHOD, new Buffer(password), iv);
+  const cipher = crypto.createCipheriv(AES_METHOD, Buffer.from(password), iv);
   let encrypted = cipher.update(text);
 
   encrypted = Buffer.concat([encrypted, cipher.final()]);
@@ -20,9 +20,13 @@ export function encrypt(text, password) {
 
 export function decrypt(text, pass) {
   const textParts = text.split(':');
-  const iv = new Buffer(textParts.shift(), 'hex');
-  const encryptedText = new Buffer(textParts.join(':'), 'hex');
-  const decipher = crypto.createDecipheriv('aes-256-cbc', new Buffer(pass), iv);
+  const iv = Buffer.from(textParts.shift(), 'hex');
+  const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+  const decipher = crypto.createDecipheriv(
+    'aes-256-cbc',
+    Buffer.from(pass),
+    iv,
+  );
   let decrypted = decipher.update(encryptedText);
 
   decrypted = Buffer.concat([decrypted, decipher.final()]);
