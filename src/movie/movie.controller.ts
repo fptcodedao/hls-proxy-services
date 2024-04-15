@@ -39,6 +39,7 @@ export class MovieController {
             headers: {
               Referer: referer,
             },
+            timeout: 3000,
           })
           .toPromise();
         const data = this.mapFileM3u8(response.data, m3u8, referer);
@@ -71,6 +72,7 @@ export class MovieController {
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.132 Safari/537.36',
         Referer: referer,
       },
+      timeout: 3000,
     };
 
     const proxy = https.request(options, (r) => {
